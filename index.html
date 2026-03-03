@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Rastreador en Tiempo Real</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbsszjuwPw_6KYpqpruCF31YJWVfOMUog",
+  authDomain: "realdatabase-9b31a.firebaseapp.com",
+  databaseURL: "https://realdatabase-9b31a-default-rtdb.firebaseio.com",
+  projectId: "realdatabase-9b31a",
+  storageBucket: "realdatabase-9b31a.firebasestorage.app",
+  messagingSenderId: "1056771192845",
+  appId: "1:1056771192845:web:346c1fe23c62d11a1b3d44"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+mapboxgl.accessToken = "pk.eyJ1IjoibGVvbmVsLTM2IiwiYSI6ImNtbTluMmh3bDA0ZXkycm9qMGJlNHI5cncifQ.eTbuwAhlPBFgzwXdoy0xEA";
+
+const map = new mapboxgl.Map({
+    container: "map",
+    style: "mapbox://styles/mapbox/streets-v12",
+    center: [-67.0, -16.5],
+    zoom: 15 // Un poco más de zoom para notar el cambio
+});
+
+// Crear el marcador fuera para tener acceso global
+const marker = new mapboxgl.Marker({ color: "red" });
+
+map.on('load', () => {
+    console.log("Mapa cargado al 100%");
+    marker.setLngLat([-67.0, -16.5]).addTo(map);
+
+    // Solo activamos la escucha cuando el mapa esté listo
+    const ubicacionRef = ref(db, "ubicacion_usuario");
+    
+    onValue(ubicacionRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.lat && data.lng) {
+            const lng = parseFloat(data.lng);
+            const lat = parseFloat(data.lat);
+            
+            console.log("Moviendo a:", lng, lat);
+            
+            // Actualizar marcador
+            marker.setLngLat([lng, lat]);
+
+            // Forzar a la cámara a ir ahí
+            map.jumpTo({
+                center: [lng, lat]
+            });
+            
+            // Forzar redibujado (Truco final)
+            map.resize(); 
+        }
+    });
+});
+</script>
+
+
+</body>
+</html>
